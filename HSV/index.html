@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HSV Color Picker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+    canvas {
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      margin-bottom: 20px;
+    }
+    .row {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .card {
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 14px;
+      width: 260px;
+    }
+    .preview {
+      height: 70px;
+      border-radius: 10px;
+      margin: 10px 0;
+    }
+    img {
+      max-width: 260px;
+      border-radius: 10px;
+      cursor: crosshair;
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: none;
+      background: #2a2a2a;
+      color: white;
+      cursor: pointer;
+    }
+    .saved-color {
+      height: 30px;
+      border-radius: 6px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h2>HSV Picker (OpenCV Scale)</h2>
+
+<div class="row">
+
+  <div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+  </div>
+
+  <div class="card">
+    <div id="preview" class="preview"></div>
+
+    <div>H: <span id="h">0</span></div>
+    <div>S: <span id="s">0</span></div>
+    <div>V: <span id="v">255</span></div>
+
+    <br/>
+    <div>Lower:</div>
+    <div id="lower"></div>
+
+    <div>Upper:</div>
+    <div id="upper"></div>
+
+    <button onclick="saveColor()">Save Color</button>
+  </div>
+
+  <div class="card">
+    <div><b>Upload Image</b></div>
+    <input type="file" id="upload" accept="image/*">
+    <img id="image" />
+
+    <div style="margin-top:10px">
+      <div>Pixel HSV:</div>
+      <div id="pixel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div><b>Saved Colors</b></div>
+    <div id="saved"></div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const radius = canvas.width / 2;
+
+let currentHSV = { h: 0, s: 0, v: 255 };
+let savedColors = [];
+
+for (let angle = 0; angle < 360; angle++) {
+  const start = (angle - 1) * Math.PI / 180;
+  const end = angle * Math.PI / 180;
+
+  ctx.beginPath();
+  ctx.moveTo(radius, radius);
+  ctx.arc(radius, radius, radius, start, end);
+  ctx.closePath();
+  ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
+  ctx.fill();
+}
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - radius;
+  const y = e.clientY - rect.top - radius;
+
+  const dist = Math.sqrt(x*x + y*y);
+  if (dist > radius) return;
+
+  let angle = Math.atan2(y, x) * 180 / Math.PI;
+  if (angle < 0) angle += 360;
+
+  const h = Math.round((angle / 360) * 179);
+  const s = Math.min(255, Math.round((dist / radius) * 255));
+  const v = 255;
+
+  updateHSV(h, s, v, `hsl(${angle}, 100%, 50%)`);
+});
+
+function updateHSV(h, s, v, color) {
+  currentHSV = { h, s, v };
+
+  document.getElementById("h").innerText = h;
+  document.getElementById("s").innerText = s;
+  document.getElementById("v").innerText = v;
+
+  document.getElementById("preview").style.background = color;
+
+  document.getElementById("lower").innerText =
+    `(${Math.max(0,h-10)}, ${Math.max(0,s-40)}, 40)`;
+
+  document.getElementById("upper").innerText =
+    `(${Math.min(179,h+10)}, 255, 255)`;
+}
+
+function saveColor() {
+  savedColors.push({...currentHSV});
+  renderSaved();
+}
+
+function renderSaved() {
+  const container = document.getElementById("saved");
+  container.innerHTML = "";
+
+  savedColors.forEach((c, i) => {
+    const div = document.createElement("div");
+    const hueDeg = (c.h / 179) * 360;
+
+    div.innerHTML = `
+      <div class="saved-color" style="background:hsl(${hueDeg},100%,50%)"></div>
+      <div style="font-size:12px">H:${c.h} S:${c.s} V:${c.v}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+/* IMAGE UPLOAD + PIXEL SAMPLING */
+
+const upload = document.getElementById("upload");
+const image = document.getElementById("image");
+
+upload.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = () => image.src = reader.result;
+  reader.readAsDataURL(file);
+});
+
+image.addEventListener("click", (e) => {
+  const tempCanvas = document.createElement("canvas");
+  const tempCtx = tempCanvas.getContext("2d");
+
+  tempCanvas.width = image.width;
+  tempCanvas.height = image.height;
+
+  tempCtx.drawImage(image, 0, 0);
+
+  const rect = image.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const pixel = tempCtx.getImageData(x, y, 1, 1).data;
+
+  const r = pixel[0] / 255;
+  const g = pixel[1] / 255;
+  const b = pixel[2] / 255;
+
+  const max = Math.max(r,g,b);
+  const min = Math.min(r,g,b);
+  const diff = max - min;
+
+  let h = 0;
+
+  if (diff !== 0) {
+    if (max === r) h = (60 * ((g - b) / diff) + 360) % 360;
+    else if (max === g) h = (60 * ((b - r) / diff) + 120) % 360;
+    else h = (60 * ((r - g) / diff) + 240) % 360;
+  }
+
+  const s = max === 0 ? 0 : diff / max;
+  const v = max;
+
+  const h_ocv = Math.round((h / 360) * 179);
+  const s_ocv = Math.round(s * 255);
+  const v_ocv = Math.round(v * 255);
+
+  document.getElementById("pixel").innerText =
+    `(${h_ocv}, ${s_ocv}, ${v_ocv})`;
+
+  updateHSV(h_ocv, s_ocv, v_ocv, `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`);
+});
+</script>
+
+</body>
+</html>
