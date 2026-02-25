@@ -190,17 +190,21 @@ upload.addEventListener("change", (e) => {
 });
 
 image.addEventListener("click", (e) => {
+  const rect = image.getBoundingClientRect();
+
+  const scaleX = image.naturalWidth / rect.width;
+  const scaleY = image.naturalHeight / rect.height;
+
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
 
-  tempCanvas.width = image.width;
-  tempCanvas.height = image.height;
+  tempCanvas.width = image.naturalWidth;
+  tempCanvas.height = image.naturalHeight;
 
   tempCtx.drawImage(image, 0, 0);
-
-  const rect = image.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
 
   const pixel = tempCtx.getImageData(x, y, 1, 1).data;
 
@@ -208,8 +212,8 @@ image.addEventListener("click", (e) => {
   const g = pixel[1] / 255;
   const b = pixel[2] / 255;
 
-  const max = Math.max(r,g,b);
-  const min = Math.min(r,g,b);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
   const diff = max - min;
 
   let h = 0;
@@ -230,7 +234,8 @@ image.addEventListener("click", (e) => {
   document.getElementById("pixel").innerText =
     `(${h_ocv}, ${s_ocv}, ${v_ocv})`;
 
-  updateHSV(h_ocv, s_ocv, v_ocv, `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`);
+  updateHSV(h_ocv, s_ocv, v_ocv,
+    `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`);
 });
 </script>
 
