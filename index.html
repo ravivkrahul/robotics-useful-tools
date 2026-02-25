@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robotics Useful Tools</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .card {
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: white;
+      transition: 0.2s;
+      border: 1px solid #2a2a2a;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      background: #252525;
+    }
+    .title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .desc {
+      font-size: 13px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Robotics Useful Tools</h1>
+
+<div class="grid">
+
+  <a class="card" href=\"/robotics-useful-tools/tools/hsv.html\">
+    <div class="title">HSV Range Selector</div>
+    <div class="desc">Pick colors, sample pixels, get OpenCV HSV bounds.</div>
+  </a>
+
+  <div class="card">
+    <div class="title">More Tools Coming</div>
+    <div class="desc">Calibration • RANSAC • Vision • Kinematics</div>
+  </div>
+
+</div>
+
+</body>
+</html>
